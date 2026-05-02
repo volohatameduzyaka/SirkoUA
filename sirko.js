@@ -1,67 +1,56 @@
-// Sirko Plugin - MVP v0.1
+// Sirko Plugin - MVP v0.1-fix
 (function () {
     'use strict';
 
     const PLUGIN_NAME = "Sirko";
     const PLUGIN_VERSION = "0.1";
 
-    console.log(`[${PLUGIN_NAME}] Плагин инициализирован v${PLUGIN_VERSION}`);
+    function initPlugin() {
+        console.log(`[${PLUGIN_NAME}] Плагин инициализирован v${PLUGIN_VERSION}`);
 
-    // Регистрация кнопки в карточке
-    function addSirkoButton(cardData, element) {
-        if (!element) return;
+        // Добавление кнопки "Sirko"
+        function addSirkoButton(cardData, element) {
+            if (!element) return;
 
-        const existing = element.querySelector('.sirko-button');
-        if (existing) return;
+            if (element.querySelector('.sirko-button')) return;
 
-        const btn = document.createElement('div');
-        btn.className = 'sirko-button button';
-        btn.innerHTML = '▶ Sirko';
-        btn.style.cssText = 'background: #0066cc; color: white; margin: 8px 4px;';
+            const btn = document.createElement('div');
+            btn.className = 'sirko-button button';
+            btn.innerHTML = '▶ Sirko';
+            btn.style.cssText = 'background: linear-gradient(45deg, #0066cc, #00aaff); color: white; margin: 8px 4px; padding: 8px 16px; border-radius: 6px; cursor: pointer;';
 
-        btn.onclick = function(e) {
-            e.stopImmediatePropagation();
-            console.log(`[${PLUGIN_NAME}] Запуск для:`, cardData.title || cardData.name);
-            // Здесь будет вызов парсера и плеера
-            Lampa.Noty.show(`Sirko: ищем ссылки для ${cardData.title || 'контента'}...`);
-            // TODO: запуск парсинга
-        };
+            btn.onclick = function(e) {
+                e.stopImmediatePropagation();
+                Lampa.Noty.show(`Sirko: ищем контент для "${cardData.title || cardData.name || 'фильма'}"...`);
+                console.log(`[${PLUGIN_NAME}] Нажата кнопка для:`, cardData);
+                // Пока просто уведомление
+            };
 
-        element.appendChild(btn);
-    }
-
-    // Подписка на события Lampa (открытие карточки)
-    Lampa.Listener.follow('card', function(e) {
-        if (e.type === 'opened') {
-            setTimeout(() => {
-                const cardElement = document.querySelector('.card-detail__info') || 
-                                  document.querySelector('.activity__content');
-                if (cardElement) {
-                    addSirkoButton(e.data, cardElement);
-                }
-            }, 800);
+            element.appendChild(btn);
         }
-    });
 
-    // Регистрация источника
-    if (typeof Lampa.Sources !== 'undefined') {
-        Lampa.Sources.register({
-            name: PLUGIN_NAME,
-            version: PLUGIN_VERSION,
-            search: function(query, onComplite) {
-                // TODO: реализация поиска
-                onComplite([]);
+        // Подписка на открытие карточки
+        Lampa.Listener.follow('card', function(e) {
+            if (e.type === 'opened') {
+                setTimeout(() => {
+                    const cardElement = document.querySelector('.card-detail__info, .activity__content, .content__info');
+                    if (cardElement && e.data) {
+                        addSirkoButton(e.data, cardElement);
+                    }
+                }, 1200);
             }
         });
+
+        console.log(`[${PLUGIN_NAME}] Готов к работе`);
     }
 
-    // Автозапуск
-    if (window.appready) {
-        console.log(`[${PLUGIN_NAME}] Готов к работе`);
+    // Безопасная инициализация
+    if (window.Lampa && window.Lampa.Listener) {
+        initPlugin();
     } else {
         Lampa.Listener.follow('app', function(event) {
-            if (event.type === 'ready') {
-                console.log(`[${PLUGIN_NAME}] Готов к работе`);
+            if (event.type === 'ready' || event.type === 'init') {
+                initPlugin();
             }
         });
     }
