@@ -54,17 +54,6 @@
     }
 
     // -----------------------------
-    // 🧼 SAFE
-    // -----------------------------
-    function safe(fn, fallback) {
-        try {
-            return fn();
-        } catch (e) {
-            return fallback;
-        }
-    }
-
-    // -----------------------------
     // 🧹 NORMALIZE + CLEAN
     // -----------------------------
     function normalize(item) {
@@ -270,7 +259,7 @@
     }
 
     // -----------------------------
-    // 🎬 MAIN UI
+    // 🎬 MAIN
     // -----------------------------
     async function openSirko() {
         let card = Lampa.Activity.active().card;
@@ -289,8 +278,6 @@
 
         let groups = group(sources);
         let ui = buildUI(groups);
-
-        let history = getHistory();
 
         Lampa.Select.show({
             title: 'Sirko',
@@ -344,13 +331,15 @@
     }
 
     // -----------------------------
-    // 🔘 BUTTON
+    // 🔘 FIXED INIT (ВАЖНО!)
     // -----------------------------
     function init() {
+
         cleanHistory();
 
-        Lampa.Listener.follow('full', function (e) {
-            if (e.type === 'complite') {
+        Lampa.Listener.follow('activity', function (e) {
+
+            if (e.type === 'start' && e.component === 'full') {
 
                 Lampa.Button.add({
                     title: 'Sirko',
@@ -372,6 +361,7 @@
                 });
 
             }
+
         });
     }
 
