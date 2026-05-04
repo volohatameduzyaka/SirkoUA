@@ -1,74 +1,63 @@
 (function () {
     'use strict';
 
-    function searchOnUafix(title, callback) {
-        let url = `https://uafix.net/?s=${encodeURIComponent(title)}`;
+    const LAMPAC = 'http://lampaua.mooo.com';
+
+    function getSources(title, callback) {
+        let url = `${LAMPAC}/lite/events?title=${encodeURIComponent(title)}`;
 
         fetch(url)
-            .then(r => r.text())
-            .then(html => {
-                let doc = new DOMParser().parseFromString(html, 'text/html');
-                let links = [...doc.querySelectorAll('a')];
+            .then(r => r.json())
+            .then(data => {
+                if (!data || !data.length) return callback([]);
+                callback(data);
+            })
+            .catch(() => callback([]));
+    }
 
-                for (let a of links) {
-                    if (a.href.includes('/films/') || a.href.includes('/serials/')) {
-                        callback(a.href);
-                        return;
-                    }
+    function showSources(list, title) {
+        if (!list.length) {
+            Lampa.Noty.show('Sirko: источники не найдены');
+            return;
+        }
+
+        let items = list.map((item, index) => {
+            let voice = item.voice || 'Без описания';
+            let name = item.name || 'Источник';
+
+            return {
+                title: `${name} • ${voice}`,
+                index: index
+            };
+        });
+
+        Lampa.Select.show({
+            title: 'Sirko: выбери источник',
+            items: items,
+            onSelect: function (item) {
+                let source = list[item.index];
+
+                if (!source || !source.url) {
+                    Lampa.Noty.show('Ошибка источника');
+                    return;
                 }
 
-                callback(null);
-            })
-            .catch(() => callback(null));
-    }
-
-    function extractIframe(html) {
-        // ищем iframe разными способами
-        let match =
-            html.match(/<iframe[^>]+src="([^"]+)"/i) ||
-            html.match(/src:\s*['"]([^'"]+)['"]/i);
-
-        return match ? match[1] : null;
-    }
-
-    function getPlayer(pageUrl, callback) {
-        fetch(pageUrl)
-            .then(r => r.text())
-            .then(html => {
-                let iframe = extractIframe(html);
-                callback(iframe);
-            })
-            .catch(() => callback(null));
+                Lampa.Player.play({
+                    url: source.url,
+                    title: title
+                });
+            }
+        });
     }
 
     function openSirko() {
         let card = Lampa.Activity.active().card;
         let title = card.title;
 
-        Lampa.Noty.show('Sirko: ищу...');
+        Lampa.Noty.show('Sirko: загрузка источников...');
 
-        searchOnUafix(title, function (pageUrl) {
-            if (!pageUrl) {
-                Lampa.Noty.show('Не найдено');
-                return;
-            }
-
-            getPlayer(pageUrl, function (iframe) {
-                if (!iframe) {
-                    Lampa.Noty.show('Плеер не найден');
-                    return;
-                }
-
-                // фикс для //domain.com
-                if (iframe.startsWith('//')) {
-                    iframe = 'https:' + iframe;
-                }
-
-                Lampa.Player.play({
-                    url: iframe,
-                    title: title
-                });
-            });
+        getSources(title, function (sources) {
+            showSources(sources, title);
         });
     }
 
