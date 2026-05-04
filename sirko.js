@@ -1,57 +1,87 @@
-// Sirko Plugin - MVP v0.1-fix
 (function () {
     'use strict';
 
-    const PLUGIN_NAME = "Sirko";
-    const PLUGIN_VERSION = "0.1";
+    function searchOnUafix(title, callback) {
+        let url = `https://uafix.net/?s=${encodeURIComponent(title)}`;
 
-    function initPlugin() {
-        console.log(`[${PLUGIN_NAME}] Плагин инициализирован v${PLUGIN_VERSION}`);
+        fetch(url)
+            .then(r => r.text())
+            .then(html => {
+                let doc = new DOMParser().parseFromString(html, 'text/html');
+                let links = [...doc.querySelectorAll('a')];
 
-        // Добавление кнопки "Sirko"
-        function addSirkoButton(cardData, element) {
-            if (!element) return;
-
-            if (element.querySelector('.sirko-button')) return;
-
-            const btn = document.createElement('div');
-            btn.className = 'sirko-button button';
-            btn.innerHTML = '▶ Sirko';
-            btn.style.cssText = 'background: linear-gradient(45deg, #0066cc, #00aaff); color: white; margin: 8px 4px; padding: 8px 16px; border-radius: 6px; cursor: pointer;';
-
-            btn.onclick = function(e) {
-                e.stopImmediatePropagation();
-                Lampa.Noty.show(`Sirko: ищем контент для "${cardData.title || cardData.name || 'фильма'}"...`);
-                console.log(`[${PLUGIN_NAME}] Нажата кнопка для:`, cardData);
-                // Пока просто уведомление
-            };
-
-            element.appendChild(btn);
-        }
-
-        // Подписка на открытие карточки
-        Lampa.Listener.follow('card', function(e) {
-            if (e.type === 'opened') {
-                setTimeout(() => {
-                    const cardElement = document.querySelector('.card-detail__info, .activity__content, .content__info');
-                    if (cardElement && e.data) {
-                        addSirkoButton(e.data, cardElement);
+                for (let a of links) {
+                    if (a.href.includes('/films/') || a.href.includes('/serials/')) {
+                        callback(a.href);
+                        return;
                     }
-                }, 1200);
-            }
-        });
+                }
 
-        console.log(`[${PLUGIN_NAME}] Готов к работе`);
+                callback(null);
+            })
+            .catch(() => callback(null));
     }
 
-    // Безопасная инициализация
-    if (window.Lampa && window.Lampa.Listener) {
-        initPlugin();
-    } else {
-        Lampa.Listener.follow('app', function(event) {
-            if (event.type === 'ready' || event.type === 'init') {
-                initPlugin();
+    function extractIframe(html) {
+        // ищем iframe разными способами
+        let match =
+            html.match(/<iframe[^>]+src="([^"]+)"/i) ||
+            html.match(/src:\s*['"]([^'"]+)['"]/i);
+
+        return match ? match[1] : null;
+    }
+
+    function getPlayer(pageUrl, callback) {
+        fetch(pageUrl)
+            .then(r => r.text())
+            .then(html => {
+                let iframe = extractIframe(html);
+                callback(iframe);
+            })
+            .catch(() => callback(null));
+    }
+
+    function openSirko() {
+        let card = Lampa.Activity.active().card;
+        let title = card.title;
+
+        Lampa.Noty.show('Sirko: ищу...');
+
+        searchOnUafix(title, function (pageUrl) {
+            if (!pageUrl) {
+                Lampa.Noty.show('Не найдено');
+                return;
+            }
+
+            getPlayer(pageUrl, function (iframe) {
+                if (!iframe) {
+                    Lampa.Noty.show('Плеер не найден');
+                    return;
+                }
+
+                // фикс для //domain.com
+                if (iframe.startsWith('//')) {
+                    iframe = 'https:' + iframe;
+                }
+
+                Lampa.Player.play({
+                    url: iframe,
+                    title: title
+                });
+            });
+        });
+    }
+
+    function addButton() {
+        Lampa.Listener.follow('full', function (e) {
+            if (e.type === 'complite') {
+                Lampa.Button.add({
+                    title: 'Sirko',
+                    onClick: openSirko
+                });
             }
         });
     }
+
+    addButton();
 })();
