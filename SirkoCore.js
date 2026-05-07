@@ -10,12 +10,20 @@
 
         if ($('.button--sirko').length) return;
 
-        let container = $('.full-start-new__buttons');
+        // Ищем РЕАЛЬНЫЙ контейнер кнопок
+        let container = $('.full-start__buttons');
+
+        // fallback
+        if (!container.length) {
+            container = $('.items-line');
+        }
 
         if (!container.length) {
             console.log('Sirko: buttons container not found');
             return;
         }
+
+        console.log('Sirko: container found');
 
         container.append(`
             <div class="full-start__button selector button--sirko">
@@ -27,11 +35,14 @@
             </div>
         `);
 
+        console.log('Sirko button added');
+
         $('.button--sirko').on('hover:enter', function () {
+
             Lampa.Noty.show('Sirko работает 🚀');
+
         });
 
-        console.log('Sirko button added');
     }
 
     function init() {
@@ -42,9 +53,12 @@
 
             console.log('Sirko event:', e);
 
-            if (e.type === 'complite' || e.type === 'complete') {
+            if (
+                e.type === 'complite' ||
+                e.type === 'complete'
+            ) {
 
-                setTimeout(addButton, 300);
+                setTimeout(addButton, 500);
 
             }
 
