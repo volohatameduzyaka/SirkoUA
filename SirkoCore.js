@@ -12,7 +12,10 @@
 
         let container = $('.full-start-new__buttons');
 
-        if (!container.length) return;
+        if (!container.length) {
+            console.log('Sirko: buttons container not found');
+            return;
+        }
 
         container.append(`
             <div class="full-start__button selector button--sirko">
@@ -37,7 +40,7 @@
 
         Lampa.Listener.follow('full', function (e) {
 
-            console.log('Sirko event', e);
+            console.log('Sirko event:', e);
 
             if (e.type === 'complite' || e.type === 'complete') {
 
