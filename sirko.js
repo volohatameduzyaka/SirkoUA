@@ -1,85 +1,44 @@
 (function () {
     'use strict';
 
-    function debug(message) {
+    if (!window.Lampa) return;
 
-        console.log('SIRKO DEBUG:', message);
+    function plugin() {
 
-        // экранный debug
-        let box = document.getElementById('sirko-debug');
+        Lampa.Listener.follow('full', function (e) {
 
-        if (!box) {
-            box = document.createElement('div');
+            if (e.type === 'complite') {
 
-            box.id = 'sirko-debug';
+                Lampa.Controller.listener.follow('toggle', function () {});
 
-            box.style.position = 'fixed';
-            box.style.top = '20px';
-            box.style.right = '20px';
-            box.style.zIndex = '999999';
-            box.style.background = 'rgba(0,0,0,0.9)';
-            box.style.color = '#fff';
-            box.style.padding = '15px';
-            box.style.fontSize = '18px';
-            box.style.borderRadius = '10px';
-            box.style.maxWidth = '400px';
+                if ($('.button--sirko').length) return;
 
-            document.body.appendChild(box);
-        }
+                $('.full-start-new__buttons').append(`
+                    <div class="full-start__button selector button--sirko">
+                        <svg height="22" viewBox="0 0 24 24" width="22">
+                            <path fill="currentColor"
+                                d="M12 2L2 7V17L12 22L22 17V7L12 2Z"/>
+                        </svg>
+                        <span>Sirko</span>
+                    </div>
+                `);
 
-        box.innerHTML += '<div>' + message + '</div>';
+                $('.button--sirko').on('hover:enter', function () {
+                    Lampa.Noty.show('Sirko работает 🚀');
+                });
+
+            }
+
+        });
+
     }
 
-    function startPlugin() {
-
-        debug('PLUGIN STARTED');
-
-        if (!window.Lampa) {
-            debug('LAMPA NOT FOUND');
-            return;
-        }
-
-        debug('LAMPA FOUND');
-
-        // тестовая кнопка прямо в DOM
-        let btn = document.createElement('button');
-
-        btn.innerText = 'SIRKO TEST';
-
-        btn.style.position = 'fixed';
-        btn.style.bottom = '50px';
-        btn.style.right = '50px';
-        btn.style.zIndex = '999999';
-        btn.style.padding = '20px';
-        btn.style.fontSize = '20px';
-        btn.style.background = 'red';
-        btn.style.color = 'white';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '10px';
-
-        btn.onclick = function () {
-            alert('Sirko работает');
-        };
-
-        document.body.appendChild(btn);
-
-        debug('TEST BUTTON ADDED');
-
-        // слушаем события
-        if (Lampa.Listener) {
-
-            debug('LISTENER FOUND');
-
-            Lampa.Listener.follow('full', function (e) {
-                debug('FULL EVENT: ' + JSON.stringify(e));
-            });
-
-        } else {
-            debug('LISTENER NOT FOUND');
-        }
+    if (window.appready) {
+        plugin();
+    } else {
+        Lampa.Listener.follow('app', function (e) {
+            if (e.type === 'ready') plugin();
+        });
     }
-
-    // старт
-    setTimeout(startPlugin, 3000);
 
 })();
